@@ -64,7 +64,7 @@ function list(req, res) {
 function read(req, res) {
   res.json({ data: res.locals.dish });
 }
-// UPDATE order
+// UPDATE dish
 function update(req, res) {
   const dish = res.locals.dish;
   const { data: { name, description, price, image_url } = {} } = req.body;
@@ -76,11 +76,31 @@ function update(req, res) {
 
   res.json({ data: dish });
 }
+function create(req, res) {
+  const { data: { name, description, price, image_url } = {} } = req.body;
+  const newDish = {
+    id: nextId(),
+    name,
+    description,
+    price,
+    image_url,
+  };
+  dishes.push(newDish);
+  res.status(201).json({ data: newDish });
+}
 
 module.exports = {
   list,
   read: [dishExists, read],
-  // create: [validation, create],
+  create: [
+    bodyDataHas("name"),
+    bodyDataHas("description"),
+    bodyDataHas("price"),
+    bodyDataHas("image_url"),
+    priceIsValidNumber,
+    idsMatchIfPresent,
+    create,
+  ],
   update: [
     dishExists,
     bodyDataHas("name"),
@@ -91,6 +111,4 @@ module.exports = {
     idsMatchIfPresent,
     update,
   ],
-  // delete: [dishExists, destroy],
-  // // don't need? dishExists, // export to make 404 middleware available for nested route
 };
