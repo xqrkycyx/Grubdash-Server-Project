@@ -136,11 +136,30 @@ function update(req, res) {
 
   res.json({ data: order });
 }
+// CREATE order
+function create(req, res) {
+  const { deliverTo, mobileNumber, dishes = {} } = req.body.data;
+  const newOrder = {
+    id: nextId(),
+    status: "pending",
+    deliverTo: deliverTo,
+    mobileNumber: mobileNumber,
+    dishes: dishes,
+  };
+  orders.push(newOrder);
+  res.status(201).json({ data: newOrder });
+}
 
 module.exports = {
   list,
   read: [orderExists, read],
-  // create: [validation, create],
+  create: [
+    bodyDataHas("deliverTo"),
+    bodyDataHas("mobileNumber"),
+    bodyDataHas("dishes"),
+    dishesValid,
+    create,
+  ],
   update: [
     orderExists,
     idsMatchIfPresent,
@@ -153,5 +172,4 @@ module.exports = {
     update,
   ],
   // delete: [orderExists, destroy],
-  // // don't need? orderExists, // export to make 404 middleware available for nested route
 };
