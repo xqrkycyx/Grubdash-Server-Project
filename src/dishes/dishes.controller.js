@@ -18,7 +18,7 @@ function dishExists(req, res, next) {
   }
   next({
     status: 404,
-    message: `Dish not found: dishId ${foundDish}`,
+    message: `Dish does not exist: ${dishId}`,
   });
 }
 function bodyDataHas(propertyName) {
@@ -27,7 +27,7 @@ function bodyDataHas(propertyName) {
     if (data[propertyName]) {
       return next();
     }
-    next({ status: 400, message: `Must include a ${propertyName}` });
+    next({ status: 400, message: `Dish must include a ${propertyName}` });
   };
 }
 function priceIsValidNumber(req, res, next) {
@@ -35,24 +35,22 @@ function priceIsValidNumber(req, res, next) {
   if (price <= 0 || !Number.isInteger(price)) {
     return next({
       status: 400,
-      message: `price requires a valid number`,
+      message: `Dish must have a price that is an integer greater than 0`,
     });
   }
   next();
 }
 function idsMatchIfPresent(req, res, next) {
-  const { data = {} } = req.body;
-
+  const { data: { id } = {} } = req.body;
   if (
-    data &&
-    data.id !== undefined &&
-    data.id !== null &&
-    data.id !== "" &&
-    data.id !== res.locals.dish.id
+    id !== undefined &&
+    id !== null &&
+    id !== "" &&
+    id !== res.locals.dish.id
   ) {
     return next({
       status: 400,
-      message: `req.data.id ${data.id} does not match route :dishId ${res.locals.dish.id}`,
+      message: `Dish id does not match route id. Dish: ${id}, Route: ${res.locals.dish.id}`,
     });
   }
   next();
