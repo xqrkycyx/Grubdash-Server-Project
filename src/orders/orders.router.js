@@ -7,7 +7,7 @@ const methodNotAllowed = require("../errors/methodNotAllowed");
 router
   .route("/:orderId")
   .get(controller.read)
-  //   .put(controller.update)
+  .put(controller.update)
   .all(methodNotAllowed);
 
 router
