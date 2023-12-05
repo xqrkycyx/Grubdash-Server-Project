@@ -67,7 +67,7 @@ function read(req, res) {
 // UPDATE dish
 function update(req, res) {
   const dish = res.locals.dish;
-  const { data: { name, description, price, image_url } = {} } = req.body;
+  const { name, description, price, image_url = {} } = req.body.data;
 
   dish.name = name;
   dish.description = description;
@@ -77,7 +77,7 @@ function update(req, res) {
   res.json({ data: dish });
 }
 function create(req, res) {
-  const { data: { name, description, price, image_url } = {} } = req.body;
+  const { name, description, price, image_url = {} } = req.body.data;
   const newDish = {
     id: nextId(),
     name,
@@ -98,7 +98,6 @@ module.exports = {
     bodyDataHas("price"),
     bodyDataHas("image_url"),
     priceIsValidNumber,
-    idsMatchIfPresent,
     create,
   ],
   update: [
