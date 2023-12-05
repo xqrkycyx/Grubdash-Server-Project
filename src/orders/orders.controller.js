@@ -18,7 +18,7 @@ function orderExists(req, res, next) {
   }
   next({
     status: 404,
-    message: `Order not found: orderId ${foundOrder}`,
+    message: `Order not found: orderId ${orderId}`,
   });
 }
 function bodyDataHas(propertyName) {
@@ -47,29 +47,47 @@ function idsMatchIfPresent(req, res, next) {
   }
   next();
 }
-function statusValid(req, res, next) {
-  const orderStatus = req.body.data.status;
-  const validStatuses = [
-    "pending",
-    "preparing",
-    "out-for-delivery",
-    "delivered",
-  ];
-  // Valid status
-  if (!validStatuses.includes(orderStatus)) {
-    return next({
-      status: 400,
-      message: `Order must have a status of pending, preparing, out-for-delivery, delivered`,
-    });
+
+function orderStatusIsValid(req, res, next) {
+  // UPDATE validations
+  if (req.method === "PUT") {
+    // Reject PUT if request's proposed status update is not valid
+    const proposedStatus = req.body.data.status;
+    const validStatusUpdates = [
+      "pending",
+      "preparing",
+      "out-for-delivery",
+      "delivered",
+    ];
+    if (!validStatusUpdates.includes(proposedStatus)) {
+      return next({
+        status: 400,
+        message: `Order must have a status of pending, preparing, out-for-delivery, delivered`,
+      });
+    }
+
+    // Reject PUT if status of order is already delivered
+    const currentStatus = res.locals.order.status;
+    if (currentStatus === "delivered") {
+      return next({
+        status: 400,
+        message: `A delivered order cannot be changed`,
+      });
+    }
   }
 
-  // Reject if status is delivered
-  if (orderStatus === "delivered") {
-    return next({
-      status: 400,
-      message: `A delivered order cannot be changed`,
-    });
+  // DESTROY validation
+  if (req.method === "DELETE") {
+    const currentStatus = res.locals.order.status;
+    // Reject DELETE if status of order is already delivered
+    if (currentStatus !== "pending") {
+      return next({
+        status: 400,
+        message: `An order cannot be deleted unless it is pending`,
+      });
+    }
   }
+
   next();
 }
 
@@ -116,11 +134,11 @@ function dishesValid(req, res, next) {
 }
 
 // OPERATION HANDLERS
-// [GET ALL] orders
+// GET ALL orders
 function list(req, res) {
   res.json({ data: orders });
 }
-// [GET ONE] order
+// GET ONE order
 function read(req, res) {
   res.json({ data: res.locals.order });
 }
@@ -155,6 +173,14 @@ function create(req, res) {
   orders.push(newOrder);
   res.status(201).json({ data: newOrder });
 }
+// DELETE order
+function destroy(req, res) {
+  const { orderId } = req.params;
+  const index = orders.findIndex((order) => order.id === Number(orderId));
+  // `splice()` returns an array of the deleted elements, even if it is one element
+  const deletedOrders = orders.splice(index, 1);
+  res.sendStatus(204);
+}
 
 module.exports = {
   list,
@@ -173,9 +199,9 @@ module.exports = {
     bodyDataHas("mobileNumber"),
     bodyDataHas("dishes"),
     bodyDataHas("status"),
-    statusValid,
+    orderStatusIsValid,
     dishesValid,
     update,
   ],
-  // delete: [orderExists, destroy],
+  delete: [orderExists, orderStatusIsValid, destroy],
 };
